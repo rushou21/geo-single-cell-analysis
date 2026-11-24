@@ -1,30 +1,31 @@
 ---
 name: geo-single-cell-analysis
-description: 在本项目中检索和评分 GEO 单细胞或单核 RNA-seq 队列，或从已有矩阵、Seurat/AnnData 对象继续多样本质控、整合、注释、供体级比较及表达程序分析。适用于执行或审查这些单细胞工作流。
+description: Select and score GEO single-cell and single-nucleus RNA-seq cohorts, or continue from an expression matrix, Seurat object, or AnnData object. Use for multi-sample QC, clustering, annotation, donor-level comparisons, expression programs, and review of these workflows.
 ---
 
-# 生信 单细胞分析技能
+# Single-Cell RNA-seq Analysis
 
-先确定用户这次要完成的阶段、研究目的和已有输入。全流程覆盖数据支持的分支。用户指定某一阶段时，直接检查它的前提并从该处开始。已有 GSE 可直接核验，已有对象可直接检查表达层、元数据与处理记录。审查流程、修改提示词等文字任务按用户要求交付文字。
+Start at the stage the user requested. For a supplied accession, verify the study and its files. For an existing object, inspect the RNA layers, cell metadata, and processing history. For a workflow review, deliver findings about the design. When a full analysis is requested, run each branch that the data and design support.
 
-## 选择入口
+## Choose a starting point
 
-| 当前任务 | 使用的参考 |
+| Task | Guide |
 |---|---|
-| 找公开队列，比较图谱或病例对照用途，选出可下载的数据 | [GEO 检索和评分](references/selection.md) |
-| 已有 GSE、矩阵或对象，需要下载、核实表达层、质控、聚类、找 marker 或定稿细胞标签 | [输入、质控与注释](references/preprocessing.md) |
-| 已有细胞类型和样本信息，需要组成、差异丰度、pseudobulk、富集、轨迹或其他条件性下游 | [供体级比较与下游分析](references/downstream.md) |
-| 需要表达程序、参考图谱检索、模型辅助注释或虚拟扰动 | [五种扩展方法](references/models.md) |
+| Set up a project, identify the packages needed for a stage, or check the local runtime | [Environment and packages](references/environment.md) |
+| Find public cohorts and rank them for an atlas or a case-control comparison | [GEO selection and scoring](references/selection.md) |
+| Download a matrix, align cells to samples, review QC, cluster, find markers, or finalize labels | [Preprocessing and annotation](references/preprocessing.md) |
+| Compare composition or expression across donors, test pathways, or assess trajectories and other conditional analyses | [Donor-level analysis](references/downstream.md) |
+| Discover expression programs, search reference atlases, evaluate model-assisted labels, or simulate a perturbation | [Programs and models](references/models.md) |
 
-## 决定哪些分析能做
+## Decide which analyses the data support
 
-1. 核实物种、组织、测序技术、研究目的、独立生物学单位及其与样本、文库、细胞的对应关系。计划比较时，先定目标组、参照组、配对关系和目标细胞类型。每个类型分别检查两组有效供体及细胞覆盖。
-2. 记录实际 RNA 表达层及尺度。原始基因 counts 支持计数模型。已有归一化 RNA 可用于适合该尺度的表达分析。只有作者的标签和坐标时，仍可做有依据的图谱展示和组成汇总。仅有 FASTQ 时回查作者提供的细胞级矩阵，建库定量另行列出。
-3. 保持原始数据和 QC 前对象可追溯。在全流程中，根据逐样本 QC 建议取得该 GSE 对应版本的用户确认，再应用过滤。将候选注释映射交给用户确认后写入最终 `celltype`。恢复任务时复用已有的对应版本确认和结果。若用户提供了已定稿的对象或明确指定采用的标签，记录其来源、当前适用范围及授权，直接进入所需下游。
-4. 默认每个独立队列分别分析。组成和条件效应以供体、动物或其他可核实的独立单位推断。组别与批次完全重合时，将受影响比较降为描述，继续其余有依据的分析。外部复现先查队列和供体重叠。
+1. Establish the species, tissue, assay, biological question, and independent sampling unit. Map cells to libraries, samples, and donors. Before a group comparison, define the contrast, reference group, pairing, and target cell types. Check donor and cell coverage separately for each type.
+2. Verify what each RNA layer contains. Use raw gene counts for count models. Use normalized RNA for compatible expression summaries. Published labels and coordinates can still support atlas displays, and labels matched to samples can support composition estimates. For FASTQ-only records, check the authors' repositories for a cell-level matrix and flag outstanding quantification.
+3. Preserve the downloaded data and a pre-QC object. In a full workflow, show the expected per-sample impact and obtain approval of that cohort's QC plan before filtering. Submit the proposed annotation map for approval before writing the final `celltype` field. Reuse matching approvals and outputs when resuming. If the user supplies finalized labels or explicitly selects existing labels for downstream analysis, record their source, scope, and QC history, then proceed from that stage.
+4. Analyze independent cohorts separately by default. Use donors, animals, or another verified independent unit for inference. If batch is fully confounded with condition, describe the affected contrast and continue other estimable analyses. Check study and donor overlap before calling another cohort an independent replication.
 
-## 保存与交付
+## Save and report
 
-检索总表保存在工作目录。新 GSE 项目采用 `<GSE>_GEO_single-cell_analysis_project/`，包含 `raw_data/`、`clean_data/`、`scripts/`、`results/` 和 `report/`。本地队列没有 GSE 编号时，以下文件名中的 `<GSE>` 使用已有项目标识或稳定队列名。已有项目沿用可核验的文件与映射，QC 图表统一放 `results/QC/`。R 与 Seurat 为主，Python 模型记录各自的环境与权重版本。
+Save the screening workbook in the working directory. Start each new GEO study under `<GSE>_GEO_single-cell_analysis_project/` with `raw_data/`, `clean_data/`, `scripts/`, `results/`, and `report/`. For a local study without a GEO accession, substitute its stable cohort ID. In an existing project, reuse verified inputs and mappings. Put QC figures and tables in `results/QC/`.
 
-全流程在每个 GSE 的 `results/analysis_index.csv` 中登记分支、比较、适用类型、必要输入、核验证据、状态和实际产物。单个分支受限时写明原因并继续其他分支。交付可复现脚本、数据表、图及中文报告，用供体数、效应及不确定性解释主要发现。模型预测、按供体重采样、留出供体评估和独立队列复现分别标注。
+For a full workflow, maintain one `results/analysis_index.csv` per study with branch, contrast, cell type, required inputs, supporting evidence, status, and output paths. Document why a branch was skipped and continue eligible work. Deliver reproducible scripts, tables, figures, and an English report by default. Give effect sizes, uncertainty, and the number of independent donors behind the findings. Identify within-cohort resampling, held-out donors, independent replication, and model predictions separately.

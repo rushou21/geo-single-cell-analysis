@@ -1,46 +1,46 @@
-# 下载、质控、聚类与细胞注释
+# Download, quality control, clustering and cell annotation
 
-每个入选队列使用独立的 `<GSE>_GEO_single-cell_analysis_project/`。下文路径均相对于该目录。续接已有项目时先定位输入、版本和已确认的决定，从适用阶段继续。
+Use a separate `<GSE>_GEO_single-cell_analysis_project/` directory for each selected cohort. Paths below are relative to that directory. When resuming an existing project, locate the inputs, versions and confirmed decisions before continuing from the requested stage.
 
-## 下载与识别表达层
+## Download and identify the RNA expression layers
 
-建立 `raw_data/`、`clean_data/`、`scripts/`、`results/`、`report/` 并在项目中文 README 中注明用途。优先用 GEOquery 获取样本信息。核对 GSE、各 GSM 补充文件和作者关联仓库，下载矩阵、feature 表、barcode、样本分组、细胞元数据、作者注释及说明。原件按文库存入 `raw_data/<GSE>/`，在同目录 `download_log.txt` 中记录来源、时间、大小、路径、状态和可用校验值。
+Create `raw_data/`, `clean_data/`, `scripts/`, `results/` and `report/`. Describe their contents in the project README in English. Use GEOquery for sample metadata when available. Inspect both GSE and GSM supplementary files and any repository linked by the authors. Download the matrix, feature and barcode tables, sample groups, cell metadata, author annotations and accompanying documentation. Keep original files by library under `raw_data/<GSE>/`. In that directory, write a `download_log.txt` with source, timestamp, size, path, status and any available checksums.
 
-核实物种、scRNA 或 snRNA、技术、矩阵轴向与 RNA 表达层。检查 10x MTX 三件套或 H5/H5AD/RDS/文本矩阵的实际内容，多模态数据取 Gene Expression。结合作者处理记录和数值核验每个表达层。10x filtered 表示细胞筛选，可能仍保留 UMI counts。H5AD 的 `.raw`、`X` 和 `layers["counts"]` 均需核实。记录矩阵维度、条形码数、已识别细胞数、样本数和可确认供体数。
+Verify the species, whether the experiment captured cells or nuclei, assay technology, matrix orientation and contents of each RNA layer. Inspect the 10x MTX matrix, features and barcodes, or the contents of the H5, H5AD, RDS or text matrix. Select Gene Expression features from multimodal inputs. Check values against the authors' processing description. A filtered 10x matrix can still contain raw UMI counts. In H5AD, establish the provenance of `.raw`, `X` and `layers["counts"]` individually. Report dimensions, barcode count, called cell or nucleus count, biological sample count and verified donor count.
 
-| 可核实的输入 | 可继续的工作 |
+| Verified input | Applicable work |
 |---|---|
-| 未归一化基因 counts | 保留完整基因的稀疏 counts，用于计算 QC、适用的归一化及后续供体级分析。 |
-| 仅有已归一化 RNA | 记录变换方式和作者 QC。直接使用兼容表达层做聚类、marker 或打分。需要原始计数的步骤标记输入缺失。 |
-| 仅有缩放值、整合层、坐标或作者标签 | 复用可核实的坐标、cluster、标签及作者证据。有可靠细胞到样本映射可汇总组成。区分在本地重算与引用作者结果的项目。 |
-| 仅 FASTQ | 查作者关联仓库是否有矩阵。仍缺矩阵则登记“待定量”，批量任务继续其他队列。 |
+| Unnormalized gene counts | Preserve sparse counts for the full gene set. Compute QC metrics and use compatible normalization and donor-level count models. |
+| Normalized RNA only | Record the transformation and author QC. Use the existing scale for compatible clustering, marker analysis or scoring. Mark analyses that require raw counts as missing input. |
+| Scaled or integrated values, coordinates or author labels only | Carry forward verified coordinates, clusters, labels and author evidence. Summarize composition if cells map reliably to samples. Identify which results were recalculated and which came from the authors. |
+| FASTQ only | Check repositories linked by the authors for a count matrix. If none is available, mark the cohort `Pending quantification` and continue with other cohorts in a batch search. |
 
-保存下载脚本 `scripts/01_download_check_scRNA.R` 和 `report/下载核验.md`。
+Save the download script at `scripts/01_download_check_scRNA.R` and its verification report at `report/download_verification.md`.
 
-## 建立质控前对象
+## Construct the pre-QC object
 
-- 保留 feature ID、原始版本后缀、Symbol、物种和参考版本。用稳定唯一键建对象，用匹配版本的注释补充映射并标记重复、一对多与未映射项。
-- `clean_data/sample_manifest.csv` 每行一个生物样本，含 `sample`、`donor`、`condition`、`batch`、`tissue`、`technology`。`clean_data/library_map.csv` 记录 `library_id`、`capture_id` 和样本的实际对应。一份混样文库可以包含多个供体，必须有可靠拆样结果才能指派供体。
-- 以文库或原始矩阵的唯一命名空间加原 barcode 生成 `cell_id`，核查跨文库重名、同一细胞的重复测序及未匹配记录。将可追溯的样本信息、作者原始 cluster、标签和 QC 字段写入 `clean_data/cell_metadata.csv`。供体未知的细胞单列。
-- 含空液滴时，保存细胞识别的方法、条形码判定及数量衔接。以已识别细胞为 QC 分母。记录作者已有过滤的范围，保存 `clean_data/<GSE>_preQC.rds`、`scripts/02_prepare_scRNA.R` 与 `report/输入与映射.md`。本步保留所有候选细胞。
+- Preserve original feature IDs, version suffixes, gene symbols, species and reference build. Use a stable unique feature key. Use version-matched annotation to record duplicate symbols, one-to-many mappings and unmapped features.
+- Write one row per biological sample in `clean_data/sample_manifest.csv`, with `sample`, `donor`, `condition`, `batch`, `tissue` and `technology`. In `clean_data/library_map.csv`, map `library_id` and `capture_id` to the actual samples. Pooled libraries can contain several donors. Assign cells to donors only when demultiplexing supports the assignment.
+- Build `cell_id` from a unique library or source-matrix identifier and the original barcode. Check reused barcodes across libraries, resequencing of the same cells and unmatched records. Save traceable sample fields, original author clusters, cell labels and available QC fields in `clean_data/cell_metadata.csv`. Report cells of unknown donor separately.
+- For unfiltered droplets, document the cell-calling method and barcode-level calls. Reconcile the number of input barcodes with the number of candidate cells or nuclei. Use called cells or nuclei as the QC denominator. Record any author filtering, retain all candidate cells at this stage and save `clean_data/<GSE>_preQC.rds`, `scripts/02_prepare_scRNA.R` and `report/input_and_mapping.md`.
 
-## 第一次确认：逐样本质控方案
+## Review and approve the sample-level QC plan
 
-1. 有 RNA counts 时计算 `nCount_RNA`、`nFeature_RNA`、`percent.mt`。核实物种和线粒体基因映射，无法识别时将线粒体比例记为缺失。按样本输出分布图及计数与检测基因数散点图。结合组织、细胞或细胞核、各样本分布解释阈值。无 counts 时评估可核实的作者 QC。
-2. 按独立捕获批次评估 doublet，在有适配液滴数据时评估环境 RNA，逐细胞保存风险标记。列出每样本各规则命中数、合并去重后预计剔除与保留数、比例，以及预计损失集中的供体或谱系。沿用作者 QC 也应写明依据。
-3. 将图、细胞标记及逐样本汇总放 `results/QC/`，脚本放 `scripts/03_QC_review.R`，将 GSE、输入对象版本、方案版本、建议阈值和预计影响写入 `report/QC_review.md`。向用户展示方案，等待对该版本的实际确认。已有相符确认可复用。阈值发生变化时重新展示预计影响。
-4. 确认后从对应 preQC 对象执行一次过滤或沿用作者 QC，保留原始 counts（如有）、ID 和元数据。保存每细胞决定与原因，将实际数同预计数逐样本核对，差异追溯到规则。对象按样本放 `clean_data/QC_filtered/`，实绩放 `results/QC/`。同版重跑可复用结果，改版从 preQC 重建依赖的结果。
+1. From RNA counts, calculate `nCount_RNA`, `nFeature_RNA` and `percent.mt`. Check the species and feature mapping for mitochondrial genes. Record the mitochondrial fraction as missing if these genes cannot be identified. Plot each metric by sample and plot total counts against detected genes. Interpret potential thresholds in light of tissue, cell versus nucleus capture, and each sample's distribution. When counts are unavailable, review only QC information supported by the authors' records.
+2. Assess doublets per independent capture and ambient RNA when compatible droplet data are available. Save per-cell risk flags. For each sample, report how many cells meet each candidate rule, the number that meet any rule after deduplication, and the expected counts and percentages removed and retained. Flag donors or lineages that would lose a disproportionate number of cells. If adopting the authors' QC, document why it fits this analysis.
+3. Place plots, flags and sample summaries in `results/QC/`, and the script in `scripts/03_QC_review.R`. Write the accession, input object version, plan version, proposed rules and expected impact to `report/QC_review.md`. Show this plan to the user and obtain their confirmation for that version before filtering. Reuse an existing confirmation for the same version. If thresholds change, show the revised impact and obtain confirmation of the revised plan.
+4. Apply the confirmed plan once to the matching pre-QC object, or retain the authors' QC as agreed. Preserve available raw counts, cell IDs and metadata. Record the decision and reason per cell. Reconcile actual and predicted retained counts per sample and identify which rules explain any discrepancies. Save per-sample objects in `clean_data/QC_filtered/` and observed outcomes in `results/QC/`. Reuse matching results on reruns. Rebuild from the pre-QC object when the plan changes.
 
-## 整合、聚类与 marker
+## Integration, clustering and markers
 
-根据计数技术选 LogNormalize 或适用于 UMI 的 SCTransform；已归一化表达按其尺度直接使用。保留未整合 PCA、邻居图、UMAP 及聚类，按 sample、donor、condition、cluster 着色。仅在技术批次有依据且存在共享群体时考虑 RPCA、CCA 或 Harmony。对照技术混合、已知 marker、生物状态和单一供体主导情况，允许选用未整合结果。组别与批次完全重合的对比限于描述。
+With counts, choose LogNormalize or, for suitable UMI data, SCTransform. Use existing normalized RNA on its documented scale. When the data support a new embedding, retain unintegrated PCA, neighbor graph, UMAP and clusters. Color plots by sample, donor, condition and cluster. Consider RPCA, CCA or Harmony when a technical batch effect and shared populations support integration. Compare within-type mixing across batches, known markers, retention of biological states and dominance by individual donors. The unintegrated representation can be the primary result. Treat comparisons with complete condition-batch confounding as descriptive.
 
-在选定空间构图和聚类，比较至少三个适宜的 resolution，记录各群大小、拆并和样本、供体、条件构成。声称稳定性时用随机种子或重采样复核。按最终 cluster 在可解释的归一化 RNA 层计算 marker。Seurat v5 的 RNA 层仍按样本拆分时先 `JoinLayers()`。采用 SCT 后需标准 RNA 归一化层时，从保留的 RNA counts 生成。导出每群 marker 表（含 log2FC、群内外表达比例和适用调整 P 值）、DotPlot、FeaturePlot 和 Top marker 热图。
+Build the neighbor graph and cluster in the selected space. Compare at least three appropriate resolutions and report population sizes, splits, merges, and sample, donor and condition composition. Check stability across seeds or resamples when claiming stable clusters. Find markers for final clusters on an interpretable normalized RNA layer. If Seurat v5 RNA layers remain split by sample, run `JoinLayers()` before marker testing. After SCTransform, derive a standard normalized RNA layer from retained RNA counts when needed. Export per-cluster marker tables with log2 fold change, detection fractions inside and outside the cluster, and applicable adjusted P values. Include a DotPlot, representative FeaturePlots and a heatmap of top markers.
 
-保存 `clean_data/<GSE>_clustered.rds`、`results/clustering/`、`results/markers/`、`scripts/04_integrate_cluster_markers.R` 及 `report/聚类与marker分析报告.md`。已核实的作者结果也可作为后续注释入口，注明其来源与限制。
+Save `clean_data/<GSE>_clustered.rds`, `results/clustering/`, `results/markers/`, `scripts/04_integrate_cluster_markers.R` and `report/clustering_and_markers.md`. Verified author clusters, coordinates or labels can also serve as the entry point for annotation. Document their source and limitations.
 
-## 第二次确认：细胞类型映射
+## Review and approve the cell-type mapping
 
-针对每个 cluster 汇总组织适配的阳性及矛盾 marker、作者标签、异质性、供体构成、候选类型、备选及置信度。作者只提供可信逐细胞标签时，可按其原标签核验。混合谱系信号要核查同一细胞共表达、环境 RNA、混合群和捕获批次 doublet 评分。分别保存 `doublet_flag` 与 `celltype`。有匹配参考时可用 SingleR 或 Seurat 标签转移对照，需用 scGPT 映射或 SCimilarity 检索时查阅[模型与表达程序](models.md)。
+For each cluster, summarize tissue-appropriate supporting and conflicting markers, author labels, heterogeneity, donor representation, candidate cell type, alternatives and confidence. When only credible author cell-level labels are available, review mappings from those labels. For mixed-lineage marker signals, examine coexpression within the same cell, ambient RNA, mixed populations and capture-level doublet scores. Keep `doublet_flag` and `celltype` as separate fields. With a suitable reference, use SingleR or Seurat label transfer for comparison. For scGPT mapping or SCimilarity retrieval, see [Expression programs and models](models.md).
 
-输出 `results/annotation/annotation_review.csv`，记录 GSE、映射版本、原 cluster 或作者标签、候选、证据及未解决项，附可用的 marker 证据图与候选 UMAP。用户实际确认此版映射后，记录人工修改，保留原 cluster 和作者原标签，新增 `celltype`；未确认的条目标记 `Uncertain`。交付最终映射、`clean_data/<GSE>_annotated.rds`、逐细胞元数据、逐样本各类型数量和比例、可用注释图、执行脚本及中文报告。
+Write `results/annotation/annotation_review.csv` with the accession, mapping version, original cluster or author label, candidate label, evidence and unresolved issues. Include marker evidence plots and a candidate-label UMAP when available. Obtain the user's confirmation of that mapping version before assigning final labels. Record manual changes, preserve original clusters and author labels, and add `celltype`. Mark unconfirmed entries as `Uncertain`. Deliver the final mapping, `clean_data/<GSE>_annotated.rds`, per-cell metadata, counts and proportions by sample and type, available annotation plots, scripts and an English report.

@@ -1,49 +1,49 @@
-# 注释后的供体级分析与交付
+# Donor-level analysis after annotation
 
-从已有注释对象开始时，读取实际对象、逐细胞标签、样本表及已有的 QC 和注释决定，核对其版本与本次研究范围。项目内标准对象为 `clean_data/<GSE>_annotated.rds`。外部对象沿用可追溯的原始标签，记录来源和可复核范围。按用户要求运行对应分支，全流程任务则逐项评估下列分支。
+When starting from an annotated object, read the object, cell-level labels, sample table and available QC and annotation decisions. Verify that their versions and scope match the request. The standard project object is `clean_data/<GSE>_annotated.rds`. For external objects, preserve traceable original labels and document what can be verified. Run the requested branches, or assess each branch below for a full workflow.
 
-## 比较设计与覆盖
+## Study design and coverage
 
-- 为每个比较记录目标组、参照组、目标类型、独立生物学单位、技术重复、配对、重复测量及拟调整的协变量。先定义比较方向，再查看检验结果。探索性对比另行标注。用 `<P>` 表示 `<GSE>_<contrast_id>`，纯图谱用 `<GSE>_atlas`，为每个类型分配唯一文件名简称 `<CT>`。
-- 核对 `cell_id/sample/donor/condition/batch/celltype`。在 `clean_data/<P>_sample_info.csv` 保存样本设计，在 `results/design/<P>_coverage.csv` 列出每种类型逐样本可追溯的 QC 前后细胞数、总 counts（如有）、每组独立供体和完整配对数。根据技术与研究设计预设合格文库和重复标准，检查某一组或供体是否系统性缺失。
-- 按对比和类型检查设计可估计性。批次与条件完全重合时，该对比仅描述。独立性不明的样本可用于图谱展示，在独立性已核实的子集上重新评估推断资格。细胞数用于描述覆盖，组间推断的重复数取独立供体、动物或独立培养。
+- For each contrast, record the target and reference groups, target cell types, independent biological unit, technical replicates, pairing, repeated measurements and planned covariates. Define the direction of comparison before reviewing test results. Label exploratory contrasts. In file names, use `<P>` for `<GSE>_<contrast_id>`, or `<GSE>_atlas` for atlas-only work. Use a unique short identifier `<CT>` for each cell type and retain the label mapping.
+- Verify `cell_id`, `sample`, `donor`, `condition`, `batch` and `celltype`. Save the design in `clean_data/<P>_sample_info.csv`. In `results/design/<P>_coverage.csv`, record traceable pre- and post-QC cell counts per sample and type, total RNA counts when available, independent donors per group and complete pairs. Before testing, choose coverage and replication criteria appropriate to the assay and design. Check for systematic loss of a group or donor.
+- Check estimability separately for each contrast and type. Report descriptive results for a contrast completely confounded with batch. Samples with uncertain independence can contribute to an atlas. Reassess eligibility for inference within the subset of verified independent units. Report cells as coverage and donors, animals or independent cultures as biological replicates.
 
-## 组成与差异丰度
+## Composition and differential abundance
 
-1. 可靠的逐细胞标签和样本映射即可计算组成。明确分母为全体 QC 合格细胞、富集细胞或特定母群，记录 `Uncertain` 和 `doublet_flag` 的处理。合格样本内未观察到某类填 0，样本缺测或分母为零的比例记为缺失。
-2. 在 `results/composition/` 保存 `<P>_sample_celltype_counts.csv`、`<P>_sample_celltype_proportions.csv`、逐样本堆叠图和供体散点图，有配对时连线。模型使用样本级类型计数及分母，处理组成约束、配对和重复测量。在可比的细胞邻居图上有连续状态且有足够独立重复时，另做 miloR 邻域差异丰度。
-3. 在 `<P>_differential_abundance.csv` 报告效应方向、分母或参考群、模型及多重校正范围。结合取材和富集方案解释相对丰度。无可估计比较时保留逐样本描述。
+1. Reliable cell labels and sample assignments are sufficient to estimate composition. Define the denominator, such as all QC-passing cells, enriched cells or a parent population. Document how `Uncertain` and `doublet_flag` affect it. Record zero for an unobserved type in an eligible sample. Mark a proportion as missing when its sample is missing or its denominator is zero.
+2. In `results/composition/`, save `<P>_sample_celltype_counts.csv`, `<P>_sample_celltype_proportions.csv`, per-sample stacked proportion plots and donor-level dot plots. Connect observations from the same donor in paired designs. Use sample-level type counts and denominators in models that account for composition, pairing and repeated measurement. Consider miloR neighborhood differential abundance for continuous cell states when a comparable graph spans the samples and independent replication supports the comparison.
+3. Save `<P>_differential_abundance.csv` in the same directory. Report effect direction, denominator or reference population, model and multiple-testing correction scope. Interpret changes in relative abundance in the context of sampling and enrichment. If a contrast cannot be estimated, retain the sample-level observations.
 
-## 类型内 pseudobulk 差异表达
+## Pseudobulk differential expression within cell types
 
-1. 从未归一化的 RNA 基因 counts 出发，按生物样本、条件、细胞类型逐基因求和。合并可核实的同一样本技术重复，保留同一供体的不同条件、时点和部位。某样本中该类型的细胞数为零时，其组成计数为零，表达模型中则缺少文库。核对 pseudobulk 矩阵列和样本表一一对应。
-2. 按类型过滤低表达基因，检查文库量、PCA、异常样本、每组有效供体数、配对与设计矩阵。原始计数和设计支持时使用 edgeR 准似然或 DESeq2。完整供体内两条件可用 `~ donor + condition`，复杂重复测量选择相应模型。只有归一化表达时跳过 counts 模型并评估组成和通路得分。
-3. 在 `results/DEG/` 保存各类型的矩阵、样本表、`<P>_<CT>_DEG_all.csv` 和 `<P>_<CT>_DEG_significant.csv`，后者可以是有表头的空表。写明目标组相对参照组的 log2FC、稳定基因 ID、Symbol、统计量、原始 P 值、BH 校正值和有效供体数。预设效应及显著性标准、每个检验族的校正范围，配供体级表达图。比较两个类型的响应强弱时，用能处理同供体相关性的类型 × 条件交互或等价检验。
+1. Sum unnormalized RNA gene counts across cells within each biological sample, condition and cell type. Combine verified technical replicates of a sample. Keep distinct conditions, times and sites from one donor identifiable. If a sample has zero cells of a type, its composition count is zero and it contributes no expression library for that type. Match each pseudobulk column to its sample-table row in order.
+2. Filter low-expression genes within each type. Check library sizes, sample PCA, outliers, retained donors per group, complete pairs and design matrix rank. Use edgeR quasi-likelihood tests or DESeq2 where counts and design support them. Complete two-condition donor pairs may use `~ donor + condition`. Choose a model appropriate to more complex repeated sampling. With normalized RNA alone, assess composition, eligible pathway scores and descriptive gene expression.
+3. In `results/DEG/`, save each type's count matrix, sample table, `<P>_<CT>_DEG_all.csv` and `<P>_<CT>_DEG_significant.csv`. Retain column headers if the significant table has no rows. Report stable gene ID, symbol, target-versus-reference log2 fold change, statistic, raw P value, Benjamini-Hochberg adjusted P value and effective donor counts. Prespecify effect and significance thresholds and the family of tests for each correction. Plot donor-level expression. To compare response magnitude across types, use a cell-type-by-condition interaction or equivalent test that accounts for measurements from the same donor.
 
-## 仅有归一化表达时的基因描述
+## Gene expression with normalized RNA only
 
-仅有可解释的归一化 RNA 时，对用户指定的基因可按供体和细胞类型汇总表达，作逐供体点图或配对连线，并注明原有变换、汇总尺度和有效细胞数。组间归一化均值差按该尺度描述。需要 counts 模型的 DEG 表时，继续核查能与现有细胞 ID 对齐的原始基因计数。
+For specified genes, summarize interpretable normalized expression by donor and cell type. Plot donor points and connect paired observations. Record the original transformation, summary scale and contributing cell count. Describe differences between group means on that scale. If a count-based DEG table is requested, check for original gene counts that can be aligned to the current cell IDs.
 
-## 通路与基因集
+## Pathways and gene sets
 
-- **GO/KEGG 富集**。在每个类型内将显著上、下调基因分开，背景取该比较中实际受检且可映射的基因。在 `results/Enrich/` 输出完整结果、前景与背景数、物种、ID 映射和数据库版本。
-- **排序 GSEA**。在 `results/GSEA/` 按类型保存全部受检、可映射基因的有向排名和结果。使用有限、有符号的统计量，例如 Wald 统计量或单自由度 edgeR 准似然检验的 `sign(log2FC) × √F`。记录重复 ID 和并列值处理，报告 NES、校正值和 leading-edge 基因。有效排名足以开展 GSEA，即使没有显著 DEG。
-- **细胞得分**。表达层符合方法要求且基因集覆盖充分时，可独立运行预定义通路打分。按类型和样本汇总，按供体或配对设计比较。单独标明无合格排名、无显著结果及支持的变化方向。
+- **GO or KEGG overrepresentation.** Within each type, test significant upregulated and downregulated genes separately. The background comprises genes tested in that contrast and mappable to that database. Save full results, foreground and background sizes, species, ID mapping and database version in `results/Enrich/`.
+- **Preranked GSEA.** Save the directional ranks of all tested, mappable genes and the results by type in `results/GSEA/`. Use finite signed statistics, such as the Wald statistic or `sign(log2FC) * sqrt(F)` for a one-degree-of-freedom edgeR quasi-likelihood test. Document duplicate-ID and tie handling. Report the normalized enrichment score, adjusted P value and leading-edge genes. A valid ranking supports GSEA even when no genes pass the DEG significance threshold.
+- **Cell-level scores.** Score prespecified gene sets when the expression scale fits the method and the measured genes provide adequate coverage. Summarize by type and sample. Compare scores using donors or the paired design. Distinguish an unavailable ranking, a tested result with no significant change and a supported direction of change.
 
-## 其他条件性分支
+## Additional analyses with specific input requirements
 
-| 分支 | 核实输入、执行方法及交付 |
+| Branch | Required evidence, analysis and output |
 |---|---|
-| 拟时序 | 连续谱系和有生物学依据的起点支持时，用 Slingshot 等推断相对顺序，检验起点选择及单一供体影响。细胞顺序、分支和基因趋势放 `results/trajectory/`。 |
-| RNA velocity | 有细胞一一对应的 spliced/unspliced 计数且过程适合动力学模型时，检查代表基因相图和拟合，将速度结果放 `results/velocity/`。 |
-| 谱系追踪 | 有可遗传标记且标记与细胞可对应时，核验标记质量与重建一致性，谱系树放 `results/lineage/`。 |
-| 基因调控网络 | 表达与转录因子覆盖充分、物种和 motif 资源匹配时运行 SCENIC 等方法，在 `results/GRN/` 保存候选调节子、证据和样本级活性。 |
-| 细胞通讯 | 有可靠类型、可解释 RNA 表达、匹配物种的配体–受体资源，以及同一供体内足够的发送和接收细胞时，在 `results/communication/` 输出候选细胞对和信号轴。比较条件时检查供体变异与细胞数影响，按待验证假设解释。 |
-| 实测扰动 | 以实测处理、对照及生物学重复评估类型内表达或状态改变，按需核验逐细胞扰动指派，在 `results/perturbation/` 记录效应与供体覆盖。 |
-| 已有 bulk 队列去卷积 | 已有需要解释的 bulk 队列，且单细胞参考对其组织和类型具有代表性时，核对物种、基因 ID 和表达尺度。在 `results/deconvolution/` 保存样本组成估计、难区分类型和可用的独立测量对照。 |
+| Pseudotime | For a continuous lineage with a biologically supported starting state, infer relative order with Slingshot or a comparable method. Check sensitivity to root selection and donor dominance. Save cell order, branches and gene trends in `results/trajectory/`. |
+| RNA velocity | Use cell-matched spliced and unspliced counts when the process fits the kinetic model. Inspect representative gene phase portraits and model fits. Save velocity estimates in `results/velocity/`. |
+| Lineage tracing | Verify heritable lineage labels, their assignment to cells and reconstruction consistency. Save lineage trees in `results/lineage/`. |
+| Gene regulatory networks | When gene and transcription-factor coverage and species-specific motif resources support the method, run SCENIC or another appropriate approach. Save candidate regulons, supporting evidence and sample-level activity summaries in `results/GRN/`. |
+| Cell communication | Check cell labels, RNA scale, species-matched ligand-receptor resources and coverage of both sender and receiver types within donors. Save candidate cell pairs and signaling axes in `results/communication/`. For condition comparisons, assess variation across donors and sensitivity to cell counts. Interpret inferred interactions as hypotheses. |
+| Measured perturbations | Use observed treatments, controls and biological replicates to assess within-type expression or state changes. Verify cell-level perturbation assignments when required. Save effects and donor coverage in `results/perturbation/`. |
+| Deconvolution of an existing bulk cohort | Where a bulk cohort exists and the single-cell reference represents its tissue and cell types, check species, gene IDs and expression scales. Save sample composition estimates, difficult-to-distinguish types and available independent measurements for comparison in `results/deconvolution/`. |
 
-## 交付与复核
+## Deliverables and verification
 
-每个 GSE 维护一份 `results/analysis_index.csv`，逐项记录分支、比较、类型、所需输入、核实证据、有效供体和状态。状态区分“已完成”“已完成但无显著结果”“仅描述”“输入或设计不足”“运行失败”。完成项指向可打开的产物，受限项列出已核查的来源、具体限制或错误。单个分支缺输入时继续其他适用工作。
+Maintain one `results/analysis_index.csv` per GSE. Record the branch, contrast, type, required inputs, verified evidence, effective donors and status. Use `Completed`, `Completed without significant findings`, `Descriptive only`, `Insufficient input or design` or `Failed`. Link completed entries to files that open. For restricted or failed branches, list sources checked and the specific limitation or error. Continue eligible analyses when another branch lacks input.
 
-实际运行脚本放 `scripts/`，保留软件、模型和资源版本、阈值、种子、表格、PDF 及高分辨率 PNG。在 `report/<P>_单细胞分析总报告.md` 按问题汇总供体数、效应、不确定性及解释范围。有足够重复时检查逐一剔除供体或改变覆盖门槛后的结果。外部复现先核对队列和供体独立、组织和比较方向一致，再以发现阶段固定的类型、程序或候选基因复核。
+Save executed scripts in `scripts/`. Record software, model and resource versions, thresholds and random seeds. Deliver tables, PDFs and high-resolution PNGs. Write the English report to `report/<P>_single_cell_analysis_report.md`. For each research question, report the donor count, effect size, uncertainty and scope of interpretation. With sufficient replication, check sensitivity to omitting one donor at a time or changing coverage thresholds. Before external replication, verify that donors and cohorts are independent and that tissue and contrast direction align. Evaluate the types, programs or candidate genes fixed in the discovery analysis.

@@ -1,30 +1,46 @@
-# 生信 单细胞分析技能
+# Single-Cell RNA-seq Analysis
 
-面向 GEO 多样本单细胞和单核 RNA-seq 的中文 Codex 技能。可以从公开队列检索开始，也可以把已有的表达矩阵、Seurat 或 AnnData 对象交给它，从质控、注释或组间比较接着做。
+A Codex skill for multi-sample single-cell and single-nucleus RNA-seq studies. Screen GEO cohorts for a biological question, import a cell-level matrix, or continue from an annotated Seurat or AnnData object. The workflow keeps each donor's contribution visible from quality control through statistical inference.
 
-## 安装到研究项目
+## Install the skill
 
-在项目根目录运行以下命令，再在该项目的 Codex 对话中使用 `$geo-single-cell-analysis`。
+Run this command from the root of the research project where you want to use the skill. It places the entry point at `.agents/skills/geo-single-cell-analysis/SKILL.md`.
 
-```shell
+```sh
 git clone https://github.com/rushou21/geo-single-cell-analysis.git .agents/skills/geo-single-cell-analysis
 ```
 
-技能提供工作流说明。实际分析依照任务使用 R、Seurat 和相应的统计包，扩展方法按需使用匹配版本的 Python 环境、参考图谱或模型权重。
+You can also download the repository ZIP and extract its contents at that same location. Open a Codex conversation in the project and invoke `$geo-single-cell-analysis`. Cloning installs the workflow instructions. Set up the software for the analysis stage you intend to run using the [environment and package guide](references/environment.md).
 
-## 使用示例
+## What do I need?
 
-> 用 $geo-single-cell-analysis 检索人类肾组织的病例与对照 scRNA-seq 队列，核实每组的独立供体数、细胞级表达矩阵和作者注释，按适合供体级比较的程度评分，交付候选表。
-
-> 用 $geo-single-cell-analysis 从已定稿细胞类型的 Seurat 对象继续。先核对 RNA 表达层、供体配对和细胞覆盖，再比较各类型比例，并对有原始 counts 的类型做 pseudobulk 差异表达。
-
-## 分析范围
-
-| 阶段 | 交付与说明 |
+| Task | Prerequisites |
 |---|---|
-| [GEO 检索与评分](references/selection.md) | 逐条核实官方记录，按图谱或病例对照用途评分，并对重复发布的队列去重。 |
-| [输入、质控与注释](references/preprocessing.md) | 区分原始 counts、归一化数据和作者已有结果。全流程先展示各样本的预计 QC 影响，再按确认的方案过滤。候选细胞标签经确认后定稿。 |
-| [供体级比较](references/downstream.md) | 按独立生物学重复评估细胞组成、类型内差异表达与通路变化，按数据条件开展拟时序、调控网络和细胞通讯等分析。 |
-| [表达程序与模型](references/models.md) | 用 cNMF 发现表达程序，用 scGPT 或 SCimilarity 辅助核查身份与状态，用 Geneformer 或 scTenifoldKnk 探索虚拟扰动，并标明预测的解释范围。 |
+| Review a study design or screen GEO | Codex with access to this project. GEO screening also needs network access to GEO and the linked data hosts. Record each accession and the evidence supporting inclusion. |
+| Run the core R workflow | R with `Rscript`, a writable R package library, and storage for input matrices and derived objects. Seurat handles clustering and markers. GEOquery retrieves GEO metadata. Use BiocManager to match Bioconductor packages to the installed R release. |
+| Compare conditions | Sample-to-donor and condition mappings, biological replication, and a design that separates the intended effect from batch. Cell composition uses sample-level type counts. Type-specific pseudobulk differential expression needs raw RNA gene counts and edgeR or DESeq2. |
+| Run an extension | Choose packages and resources for that branch. For example, cNMF uses a separate Python environment, Geneformer needs compatible model weights and a tokenizer, and scTenifoldKnk runs in R. The [model guide](references/models.md) gives the inputs, software sources, and interpretation for each method. |
 
-完整入口见 [SKILL.md](SKILL.md)。本仓库的技能文本使用 [MIT 许可证](LICENSE)。外部数据、图谱和模型权重分别适用各发布方的条款。
+**Companion skills.** This repository is the only Codex skill required for the workflow. If already available in your installation, `bio-expression-matrix-counts-ingest` can help inspect a counts matrix, `bio-expression-matrix-metadata-joins` can help align sample labels, and `bio-differential-expression-edger-basics` can help fit an edgeR model to pseudobulk data. These names identify optional agent instructions. R and Python packages are installed separately.
+
+## Example requests
+
+> Use $geo-single-cell-analysis to find human kidney scRNA-seq cohorts with cases and controls. Verify independent donor counts, cell-level matrices, and author annotations. Rank cohorts for donor-level comparison and stop after the shortlist.
+
+> Use $geo-single-cell-analysis on this annotated Seurat object. Check the RNA layers, pairing, and cell coverage. Compare cell-type proportions across donors and run pseudobulk differential expression for cell types with usable raw counts and replication.
+
+## Workflow guides
+
+| Guide | What it covers |
+|---|---|
+| [Environment and packages](references/environment.md) | Runtime requirements, package sources, installation commands, and checks before analysis. |
+| [GEO selection and scoring](references/selection.md) | Verify official records, distinguish atlas and case-control uses, and deduplicate overlapping cohorts. |
+| [Preprocessing and annotation](references/preprocessing.md) | Inspect counts and normalized layers, align metadata, review QC thresholds before filtering, and confirm cell-type labels. |
+| [Donor-level analysis](references/downstream.md) | Estimate cell composition, test expression within types, and assess pathways, trajectories, regulatory networks, or communication when their inputs are available. |
+| [Programs and models](references/models.md) | Discover programs with cNMF, check cell identities and states with scGPT or SCimilarity, and explore virtual perturbations with Geneformer or scTenifoldKnk. |
+
+The [skill entry point](SKILL.md) explains how to resume partway through a study. Analysis outputs include reproducible scripts, tables, figures, and an English report. The workflow records the number of contributing donors and distinguishes descriptive findings, within-study inference, external replication, and model predictions.
+
+## License
+
+The skill and its documentation are available under the [MIT License](LICENSE). External software, datasets, reference atlases, and model weights are distributed under their respective terms.

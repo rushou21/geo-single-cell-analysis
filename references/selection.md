@@ -1,29 +1,29 @@
-# GEO 单细胞队列检索与评分
+# GEO cohort selection and scoring
 
-## 核实候选
+## Verify eligibility
 
-先记录主要用途（病例或处理比较、图谱，或两者中的优先用途）、组织、物种、所需细胞类型及取材范围。比较研究另记目标组、参照组、独立重复与配对。查询 GEO 后逐个核对 GSE、相关 GSM、补充文件或作者关联仓库。表中写出可打开的官方链接、访问日期和各项事实的具体来源。作者未公开的数字保留未知。
+Record the main purpose (an atlas, a condition comparison, or the higher priority if both apply), tissue, species, sampling site, and target cell types. For comparisons, define the target and reference conditions, independent replicate, and pairing. Verify each accession on its GEO Series page, then check the relevant Sample records, supplementary files, and linked author repositories. Record the official link, access date, and source for each material claim. Leave unpublished counts unknown.
 
-本项目多样本检索要求至少两个可区分的生物样本，以及可获取的基因 × 细胞矩阵。分别计数供体、样本、文库和已识别细胞。技术重复合并计数，同一供体不同样本保留配对关系。只有 FASTQ 且核查后仍无矩阵，登记“待定量”。处理已指定的数据时，按实际用途评估可行性。
+For this multi-sample shortlist, require at least two distinguishable biological samples and an accessible cell-level expression matrix. Count donors, biological samples, libraries, and called cells separately. Technical repeats do not add independent samples. Preserve pairing between samples from the same donor. If only FASTQ files remain after checking linked deposits, mark the cohort **awaiting quantification**. For a dataset the user has already selected, assess feasibility for its intended use.
 
-## 按用途评分
+## Score cohorts for their intended use
 
-**组间比较**按独立队列、具体比较和目标细胞类型评 10 分。多个类型的覆盖未知时保留待核验项，下载后复核。
+For a **condition comparison**, score each independent cohort, contrast, and target cell type on a 10-point scale. Flag uncertain cell-type coverage for verification after import.
 
-| 项目 | 分值 | 判定依据 |
+| Criterion | Points | Scoring guide |
 |---|---:|---|
-| 研究问题与取材 | 0–2 | 疾病或处理、参照及取材均吻合得 2 分，部分吻合得 1 分，关键条件不符得 0 分 |
-| 有效独立重复 | 0–3 | 按供体较少组或完整配对数。≤1、2、3–5、≥6 分别得 0、1、2、3 分。病例对照优先每组至少 3 个独立供体 |
-| 目标细胞覆盖 | 0–2 | 两组多数供体有足够细胞得 2 分，覆盖不均但可比得 1 分，主要集中于个别供体得 0 分 |
-| 混杂 | 0–2 | 条件与批次可区分且关键协变量可处理得 2 分，明确存在难以控制的差异得 1 分，完全混杂得 0 分并将该比较降为描述 |
-| 质控与身份 | 0–1 | 能按样本核查 QC，且能用作者注释、marker 或匹配的参考核实目标类型得 1 分 |
+| Question and tissue match | 0–2 | Give 2 for a match on disease or treatment, comparator, and sampling site, 1 for a partial match, and 0 for a critical mismatch. |
+| Effective independent replication | 0–3 | Use the smaller group's eligible donor count or the number of complete pairs. Award 0 for one or fewer, 1 for two, 2 for three to five, and 3 for six or more. Prefer at least three independent donors per group for case-control studies. |
+| Target cell coverage | 0–2 | Give 2 when most donors in both groups contribute enough target cells, 1 for uneven but usable coverage, and 0 when a few donors dominate. |
+| Confounding | 0–2 | Give 2 when condition is distinguishable from batch and key covariates can be addressed, 1 for substantial residual confounding, and 0 for complete confounding. Limit that contrast to description when fully confounded. |
+| QC and cell identity | 0–1 | Give 1 when per-sample QC is reviewable and identity can be checked against author labels, markers, or a suitable reference. |
 
-**图谱**另评 10 分。对以下五项分别评 0–2 分：问题与组织匹配、独立样本对组织或状态的覆盖、矩阵及表达尺度可解释、细胞可追溯至样本及批次、细胞身份可复核。有证据充分满足得 2 分，部分满足得 1 分，核实不满足得 0 分。单条件队列也可进入图谱清单。
+For an **atlas**, score five criteria independently from 0 to 2: biological question and tissue match, coverage of relevant tissues or states across samples, interpretability of the expression matrix and its scale, traceability of cells to samples and batches, and evidence supporting cell identity. Award 2 for sufficient evidence, 1 for partial fulfillment, and 0 for a verified failure. Single-condition studies can qualify.
 
-逐项保留得分依据。关键事实未知或评分区间跨档，使用“待核验”并给出可能范围。关键事实已核实且用途可行时，8–10 分为优先、5–7 分为可选、0–4 分为低优先。pseudobulk 还须核实未归一化基因 counts。比较资格受完全混杂、缺少独立重复或所需输入限制时，写清限制针对哪个问题。
+State the evidence for every score. If a critical fact is unknown or a score range spans tiers, report the range and mark the candidate **pending verification**. For a feasible use with verified inputs, classify 8–10 as high priority, 5–7 as an option, and 0–4 as low priority. Verify raw gene counts for pseudobulk expression. Document the specific inference affected by confounding, missing replicates, or missing inputs.
 
-## 保存入选清单
+## Deliver the shortlist
 
-在工作目录生成 `dataset_candidates.xlsx`，分表记录候选与证据、用途评分、最终入选。字段包括数据库、编号及关联队列、标题、官方链接、访问日期、物种、组织、疾病或处理、scRNA/snRNA、技术平台、分组、样本数、供体数、每组有效重复、细胞数、矩阵格式、raw counts、样本及细胞 metadata、作者注释、下载方式、整合可行性、风险及推荐等级。未过滤液滴数和已识别细胞数分开记录。
+Write `dataset_candidates.xlsx` in the working directory with separate sheets for candidate evidence, scores by purpose, and final selections. Include database, accession and linked cohorts, title, official link and access date, species, tissue, disease or treatment, scRNA-seq or snRNA-seq, assay platform, conditions, sample and donor counts, effective replicates per group, cell count, file format, raw-count availability, sample and cell metadata, author annotations, download route, integration feasibility, risks, and recommendation. Distinguish unfiltered droplet barcodes from called cells.
 
-先按优先用途和核实程度分层，再在同一用途内按分数及供体覆盖排序。符合要求的独立队列总计最多 5 个，实际不足时按实列出。同一 GSE 的多个用途、不同编号的重复发布保留映射并共占一个独立名额。计划跨队列复现时在查看结果前指定发现与验证队列，核查共享样本和供体。
+Group by priority use and verification status, then rank within a use by score and donor coverage. Retain up to five independent cohorts in total. Track duplicate accessions and multiple uses of one GSE under a single shortlist entry. Before examining outcomes for replication, designate discovery and validation cohorts and check for reused samples or donors.
