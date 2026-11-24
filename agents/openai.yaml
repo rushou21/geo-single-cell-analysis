@@ -1,0 +1,4 @@
+interface:
+  display_name: "生信 单细胞分析技能"
+  short_description: "检索并评估 GEO 单细胞队列，完成多样本质控、注释、供体级比较及模型分析"
+  default_prompt: "用 $geo-single-cell-analysis 检查本项目的研究设计和已有数据，从适用阶段继续单细胞分析。"
