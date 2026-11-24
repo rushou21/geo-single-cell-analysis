@@ -29,10 +29,13 @@ You can also download the repository ZIP and extract its contents at that same l
 
 > Use $geo-single-cell-analysis on this annotated Seurat object. Check the RNA layers, pairing, and cell coverage. Compare cell-type proportions across donors and run pseudobulk differential expression for cell types with usable raw counts and replication.
 
+> Use $geo-single-cell-analysis to run a complete study from counts. Make routine QC and annotation decisions autonomously, assess which downstream branches the design supports, and return the final report and analysis index.
+
 ## Workflow guides
 
 | Guide | What it covers |
 |---|---|
+| [Full workflow and acceptance](references/full-workflow.md) | Run the core stages, evaluate conditional branches independently and verify the analysis index. |
 | [Environment and packages](references/environment.md) | Runtime requirements, package sources, installation commands, and checks before analysis. |
 | [GEO selection and scoring](references/selection.md) | Verify official records, distinguish atlas and case-control uses, and deduplicate overlapping cohorts. |
 | [Preprocessing and annotation](references/preprocessing.md) | Inspect counts and normalized layers, align metadata, review QC thresholds before filtering, and confirm cell-type labels. |

@@ -1,4 +1,4 @@
 interface:
   display_name: "Single-Cell RNA-seq Analysis"
-  short_description: "Screen GEO cohorts and analyze single-cell RNA-seq by donor"
-  default_prompt: "Use $geo-single-cell-analysis to inspect the study design and available data, then continue from the appropriate analysis stage."
+  short_description: "Run or review multi-sample single-cell RNA-seq workflows"
+  default_prompt: "Use $geo-single-cell-analysis for the requested single-cell workflow and verify the outputs for each applicable stage."
