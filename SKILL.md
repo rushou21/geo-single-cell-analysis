@@ -8,7 +8,7 @@ description: Select GEO scRNA-seq or snRNA-seq cohorts, run a complete multi-sam
 ## Match the requested scope
 
 - **Selection or review.** For cohort selection, deliver the verified shortlist. For workflow review, evaluate the design and evidence. Follow any stopping point in the request.
-- **Full analysis** (“全流程”, “从头分析”, “end to end”). Open the [execution and acceptance guide](references/full-workflow.md) first. Start with the earliest available in-scope input, run the core analysis, and evaluate each conditional branch against the biological question. Preserve authors’ labels and coordinates as comparators. A published atlas or a finished donor-level model alone does not establish that QC, clustering and annotation were performed in this run.
+- **Full analysis.** Open the [execution and acceptance guide](references/full-workflow.md) first. Start with the earliest available in-scope input, run the core analysis, and evaluate each conditional branch against the biological question. Preserve authors’ labels and coordinates as comparators. A published atlas or a finished donor-level model alone does not establish that QC, clustering and annotation were performed in this run.
 - **Targeted analysis or resume.** Follow the requested entry point. Inspect the object’s count/normalized layers, cell IDs, sample manifest, labels and processing history. Reuse a scientifically suitable checkpoint with matching inputs and scope. Recompute from the earliest affected stage when these change.
 - **Skill maintenance.** If the request is to improve this skill, change the reusable instructions or tools and validate them using isolated examples. Running or resuming a biological project requires a project-analysis request. Honor a subsequent pause immediately.
 
@@ -26,7 +26,7 @@ description: Select GEO scRNA-seq or snRNA-seq cohorts, run a complete multi-sam
 
 Specify species, tissue, assay, independent unit, comparator, pairing and target population. Track cells, captures, samples and donors separately. Check estimability, cell coverage and donor overlap before making disease, treatment or replication claims. Analyze independent cohorts separately by default. Count models use unnormalized counts. Preserve original matrices and annotations, including their limitations.
 
-Respect the user’s chosen review mode. In an interactive run, present sample-specific QC impact and the proposed annotation map at the requested checkpoints. Explicit delegation of routine scientific decisions (“自动走全流程”) authorizes making and recording these decisions without asking again. A quiet run suppresses routine updates. Changes to the biological objective, destructive modifications and genuinely missing information follow the usual authorization rules.
+Respect the user’s chosen review mode. In an interactive run, present sample-specific QC impact and the proposed annotation map at the requested checkpoints. Explicit delegation of routine scientific decisions authorizes making and recording these decisions without asking again. A quiet run suppresses routine updates. Changes to the biological objective, destructive modifications and genuinely missing information follow the usual authorization rules.
 
 ## Project outputs
 
